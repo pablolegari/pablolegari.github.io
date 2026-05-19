@@ -494,6 +494,75 @@ canvas { flex-shrink: 0; }
   color: var(--amber);
 }
 
+/* STATS TAB */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.player-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.player-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.player-card-name {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.player-card-gender {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.player-card-gender.f {
+  background: var(--pink-dim);
+  color: var(--pink);
+}
+
+.player-card-gender.m {
+  background: var(--blue-dim);
+  color: var(--blue);
+}
+
+.player-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.player-stat {
+  background: var(--bg3);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.player-stat-label {
+  font-size: 11px;
+  color: var(--text3);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.player-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+
 /* ── PASS BUTTON DISABLED ── */
 .pass-btn.dim {
   opacity: 0.2;
@@ -635,7 +704,7 @@ body.light .setup-fields input { color-scheme: light; }
 
 <div class="header">
   <div class="header-top">
-    <div class="logo">ULT<span>.</span>MIX</div>
+    <div class="logo">TRACKER</div>
     <button class="btn-save" onclick="saveSession()" title="Sauvegarder">
       <span class="save-dot ok" id="saveDot"></span>
       <span id="saveLabel">Sauvegardé</span>
@@ -651,7 +720,7 @@ body.light .setup-fields input { color-scheme: light; }
 
 <div class="scoreboard">
   <div class="team-panel left">
-    <div class="team-name-lbl" id="lblA">ÉQUIPE A</div>
+    <div class="team-name-lbl" id="lblA">Mixl</div>
     <div class="score-big" id="scoreA">0</div>
     <div class="score-btns">
       <button class="btn-score add" onclick="addPoint('A')">+1 point</button>
@@ -662,7 +731,7 @@ body.light .setup-fields input { color-scheme: light; }
     <div class="vs-txt">VS</div>
   </div>
   <div class="team-panel">
-    <div class="team-name-lbl" id="lblB">ÉQUIPE B</div>
+    <div class="team-name-lbl" id="lblB">Opponent</div>
     <div class="score-big" id="scoreB">0</div>
     <div class="score-btns">
       <button class="btn-score add" onclick="addPoint('B')">+1 point</button>
@@ -673,7 +742,7 @@ body.light .setup-fields input { color-scheme: light; }
 
 <div class="line-bar">
   <span class="line-label">GENDER :</span>
-  <div class="line-badge none" id="lineBadge">Non définie</div>
+  <div class="line-badge none" id="lineBadge">Not defined</div>
   <div class="line-override">
     <span>First point :</span>
     <button class="btn-line" id="btnF" onclick="forceLine('F')">W</button>
@@ -687,13 +756,13 @@ body.light .setup-fields input { color-scheme: light; }
       <button class="tab active" onclick="showTab('offense')">Offense</button>
       <button class="tab" onclick="showTab('defense')">Defense</button>
       <button class="tab" onclick="showTab('players')">Players</button>
+      <button class="tab" onclick="showTab('stats')">Stats</button>
     </div>
 
     <div id="pane-offense" class="pane active">
       <div class="thrower-panel">
-    <div class="thrower-label">Thrower</div>
     <div id="currentThrowerDisplay" class="thrower-name">
-      None selected
+      Hello.
     </div>
       </div>
 
@@ -775,21 +844,25 @@ body.light .setup-fields input { color-scheme: light; }
         </button>
     </div>
 
+    <div id="pane-stats" class="pane">
+      <div id="statsContainer" class="stats-grid"></div>
+    </div>
+
     <div class="actions-bar">
-      <button class="btn-action reset" onclick="resetAll()">Réinitialiser</button>
-      <button class="btn-action undo" id="btnUndo" onclick="undo()" disabled title="Annuler la dernière action (Ctrl+Z)">↩ Annuler</button>
-      <button class="btn-action export" onclick="exportXLSX()">Exporter XLSX</button> 
+      <button class="btn-action reset" onclick="resetAll()">Restart</button>
+      <button class="btn-action undo" id="btnUndo" onclick="undo()" disabled title="Undo last action (Ctrl+Z)">↩ Undo</button>
+      <button class="btn-action export" onclick="exportXLSX()">Export XLSX</button> 
       <button class="btn-action link" id="btnLink" onclick="copySessionLink()">Lien session</button>
     </div>
   </div>
 
   <div class="right-col">
     <div class="stats-panel">
-      <div class="stats-title">Statistiques globales</div>
+      <div class="stats-title">Global Statistics</div>
 
       <div class="stat-row"><span class="stat-lbl">Total passes</span><span class="stat-val" id="st-total">0</span></div>
-      <div class="stat-row"><span class="stat-lbl">Passes mixtes (F↔G)</span><span class="stat-val green" id="st-mixed">0</span></div>
-      <div class="stat-row"><span class="stat-lbl">% mixité</span><span class="stat-val green" id="st-pct">—</span></div>
+      <div class="stat-row"><span class="stat-lbl">Mixed passes (F↔M)</span><span class="stat-val green" id="st-mixed">0</span></div>
+      <div class="stat-row"><span class="stat-lbl">% Mixity</span><span class="stat-val green" id="st-pct">—</span></div>
       <div class="stat-row"><span class="stat-lbl">Erreurs filles</span><span class="stat-val pink" id="st-errF">0</span></div>
       <div class="stat-row"><span class="stat-lbl">Erreurs garçons</span><span class="stat-val blue" id="st-errM">0</span></div>
 
@@ -799,15 +872,15 @@ body.light .setup-fields input { color-scheme: light; }
           <div class="bar-track"><div class="bar-fill" id="bf-FF" style="width:0%;background:#e8547a"></div></div>
         </div>
         <div class="bar-item">
-          <div class="bar-meta"><span class="bar-name">G → G</span><span class="bar-num" id="bv-MM">0</span></div>
+          <div class="bar-meta"><span class="bar-name">M → M</span><span class="bar-num" id="bv-MM">0</span></div>
           <div class="bar-track"><div class="bar-fill" id="bf-MM" style="width:0%;background:#4a9eff"></div></div>
         </div>
         <div class="bar-item">
-          <div class="bar-meta"><span class="bar-name">F → G</span><span class="bar-num" id="bv-FM">0</span></div>
+          <div class="bar-meta"><span class="bar-name">F → M</span><span class="bar-num" id="bv-FM">0</span></div>
           <div class="bar-track"><div class="bar-fill" id="bf-FM" style="width:0%;background:#3ecf7c"></div></div>
         </div>
         <div class="bar-item">
-          <div class="bar-meta"><span class="bar-name">G → F</span><span class="bar-num" id="bv-MF">0</span></div>
+          <div class="bar-meta"><span class="bar-name">M → F</span><span class="bar-num" id="bv-MF">0</span></div>
           <div class="bar-track"><div class="bar-fill" id="bf-MF" style="width:0%;background:#f5a623"></div></div>
         </div>
       </div>
@@ -818,8 +891,8 @@ body.light .setup-fields input { color-scheme: light; }
       </div>
 
       <div class="point-log">
-        <div class="stats-title" style="margin-top:18px">Points marqués</div>
-        <div id="logList"><div style="font-size:12px;color:var(--text3);padding:8px 0">Aucun point encore marqué</div></div>
+        <div class="stats-title" style="margin-top:18px">Points scored</div>
+        <div id="logList"><div style="font-size:12px;color:var(--text3);padding:8px 0">No point scored yet</div></div>
       </div>
     </div>
   </div>
@@ -833,7 +906,11 @@ body.light .setup-fields input { color-scheme: light; }
 
 const ABBA_SEQ = ['F','M','M','F']; // 4-cycle
 
-let currentThrower = null;  
+let statusMessage = "Hello";
+
+let currentThrower = null;
+
+let previousThrower = null; 
 
 let activePlayers = [];
 
@@ -870,7 +947,7 @@ const players = [
   { name: 'Zoé', gender: 'F' }
 ];
 
-const playerStats = {};
+let playerStats = {};
 
 players.forEach(player => {
 
@@ -886,11 +963,10 @@ players.forEach(player => {
     throwaways: 0,
 
     defenses: 0,
-    interceptions: 0
   };
 });
 
-const state = {
+let state = {
   scoreA: 0,
   scoreB: 0,
   lineOverride: 'F', // 'F'|'M' = ABBA offset; 'F' by default
@@ -916,40 +992,49 @@ players.forEach(p => {
 // =====================================================
 
 function pushUndo() {
+
   undoStack.push({
-    state: JSON.parse(JSON.stringify(state)),
+    state: structuredClone(state),
+    playerStats:
+      structuredClone(playerStats),
+    currentThrower,
+    previousThrower,
+    activePlayers:
+      structuredClone(activePlayers),
+    possession,
+    pendingDefense,
+    injuryMode,
+    injuredPlayer,
+    statusMessage
   });
-  if (undoStack.length > UNDO_MAX) undoStack.shift();
-  document.getElementById('btnUndo').disabled = false;
+
+  // optional max history
+  if (undoStack.length > 100) {
+    undoStack.shift();
+  }
+  
+  updateUndoButton();
 }
 
 function recordPass(receiverName) {
-
   if (!currentThrower) {
     alert("Select initial thrower");
     return;
   }
-
   // Prevent self-pass
   if (receiverName === currentThrower) return;
-
   pushUndo();
-
   // Find player objects
   const thrower =
     players.find(p => p.name === currentThrower);
-
   const receiver =
     players.find(p => p.name === receiverName);
-
   // Determine pass type automatically
   const type = thrower.gender + receiver.gender;
-
   // Update pass stats
   state.pt[type]++;
   state.tot[type]++;
   state.lastPass = type;
-
   // Action log
   state.actionLog.push({
     time: new Date().toISOString(),
@@ -958,7 +1043,7 @@ function recordPass(receiverName) {
     to: receiverName,
     detail: type,
     line: currentLine()
-  });
+    });
 
   // Create nested object if needed
   if (!state.throwConnections[currentThrower][receiverName]) {
@@ -968,11 +1053,17 @@ function recordPass(receiverName) {
   // Increment connection count
   state.throwConnections[currentThrower][receiverName]++;
 
+  // Status message
+  statusMessage = `${currentThrower} -> ${receiverName}`;
+
   // Receiver becomes next thrower
+  previousThrower = currentThrower;
   currentThrower = receiverName;
+
 
   playerStats[receiverName].touches++;
   playerStats[thrower.name].completions++;
+  
 
   render();
 }
@@ -998,83 +1089,87 @@ function recordPoint(team) {
 
 function recordGoal(scorerName) {
 
+  if (!currentThrower || !scorerName) return;
+
+  pushUndo();
+
+  // ============================================
+  // PLAYER STATS
+  // ============================================
+
   // scorer gets goal
-  const scorer =
-    players.find(p => p.name === scorerName);
+  playerStats[scorerName].goals++;
 
-  scorer.goals =
-    (scorer.goals || 0) + 1;
+  // Status Message
+  statusMessage =  `${scorerName} scored!`;
 
-  // previous thrower gets assist
-  if (currentThrower) {
+  // thrower gets assist
+  if (previousThrower) {
 
-    const thrower =
-      players.find(
-        p => p.name === currentThrower
-      );
-
-    thrower.assists =
-      (thrower.assists || 0) + 1;
+    playerStats[previousThrower].assists++;
   }
 
-  // record throw connection
-  if (currentThrower) {
+  // ============================================
+  // TEAM SCORE
+  // ============================================
 
-    if (!state.throwConnections[currentThrower][scorerName]) {
-      state.throwConnections[currentThrower][scorerName] = 0;
-    }
+  state.scoreA++;
 
-    state.throwConnections[currentThrower][scorerName]++;
-  }
+  flashScore("scoreA");
 
-  // add team score
-  addPoint("A");
+  recordPoint("A");
 
-  // reset point state
+  // reset per-point stats
+  Object.keys(state.pt).forEach(k => {
+    state.pt[k] = 0;
+  });
+
+  state.lastPass = null;
+
+  // ============================================
+  // NEXT POINT
+  // ============================================
+
   currentThrower = null;
+  previousThrower = null;
 
   activePlayers = [];
 
   possession = "defense";
 
-  // next point setup
+  // go to player selection
   showTab("players");
+
+  saveSession();
 
   render();
 }
 
 function recordDrop() {
-
   if (!currentThrower) return;
-
+  pushUndo();
   playerStats[currentThrower].drops++;
-
+  statusMessage = `${currentThrower} dropped the disc`;
   possession = "defense";
-
   currentThrower = null;
-
+  previousThrower = null;
   showTab("defense");
-
   render();
 }
 
 function recordThrowaway() {
-
   if (!currentThrower) return;
-
+  pushUndo();
   playerStats[currentThrower].throwaways++;
-
+  statusMessage = `${currentThrower} threw it away`;
   possession = "defense";
-
   currentThrower = null;
-
+  previousThrower = null;
   showTab("defense");
-
   render();
 }
 
 function addPoint(team) {
-  pushUndo();
   recordPoint(team);
   state['score' + team]++;
   flashScore('score' + team);
@@ -1095,14 +1190,15 @@ function removePoint(team) {
 }
 
 function setInitialThrower(name) {
+  pushUndo();
   currentThrower = name;
   playerStats[name].touches++;
+  statusMessage = `${name} picked up the disc`;
   pendingDefense = false;
   render();
 }
 
 function toggleActivePlayer(name) {
-
   if (activePlayers.includes(name)) {
     activePlayers =
       activePlayers.filter(p => p !== name);
@@ -1115,39 +1211,119 @@ function toggleActivePlayer(name) {
 }
 
 function startPoint() {
+  pushUndo();
   currentThrower = null;
+  if (possession === "offense")
+    statusMessage = "Point started. Select who picks up the disc";
+  else
+    statusMessage = "Point started";
   showTab(possession);
   render();
 }
 
 function recordInjury() {
-
+  pushUndo();
   injuryMode = true;
 
   injuredPlayer = null;
-
+  
   showTab("players");
 
   renderRosterButtons();
 }
 
-function undo() {
-  if (undoStack.length === 0) return;
-  const snap = undoStack.pop();
-  Object.assign(state, snap.state);
-  // deep-restore nested objects
-  state.pt = { ...snap.state.pt };
-  state.tot = { ...snap.state.tot };
-  state.pointLog = snap.state.pointLog.map(p => ({ ...p, passes: { ...p.passes }, errors: { ...p.errors } }));
-  state.actionLog = [...snap.state.actionLog];
-  document.getElementById('btnUndo').disabled = undoStack.length === 0;
-  // visual feedback
-  const btn = document.getElementById('btnUndo');
-  btn.classList.remove('undo-pop');
-  void btn.offsetWidth;
-  btn.classList.add('undo-pop');
-  setTimeout(() => btn.classList.remove('undo-pop'), 200);
+function recordOpponentThrowaway() {
+  pushUndo();
+  possession = "offense";
+  currentThrower = null;
+  pendingDefense = false;
+  statusMessage = "Opponents threw the disc away. Select who picks it up";
+  showTab("offense");
   render();
+}
+
+function recordDefense() {
+  pushUndo();
+  possession = "offense";
+  currentThrower = null;
+  pendingDefense = true;
+  statusMessage = "Select who made the defense";
+  showTab("offense");
+  render();
+}
+
+function recordInterception() {
+  pushUndo();
+  possession = "offense";
+  pendingDefense = "interception";
+  currentThrower = null;
+  statusMessage = "Select who intercepted the disc";
+  showTab("offense");
+  render();
+}
+
+function recordOpponentGoal() {
+  pushUndo();
+  addPoint("B");
+  currentThrower = null;
+  possession = "offense";
+  activePlayers = [];
+  statusMessage = "Opponents scored";
+  showTab("players");
+  render();
+}
+
+function undo() {
+  if (undoStack.length === 0)
+    return;
+
+  const snapshot =
+    undoStack.pop();
+
+  state =
+    structuredClone(snapshot.state);
+
+  playerStats =
+    structuredClone(snapshot.playerStats);
+
+  currentThrower =
+    snapshot.currentThrower;
+
+  previousThrower =
+    snapshot.previousThrower;
+
+  activePlayers =
+    structuredClone(snapshot.activePlayers);
+
+  possession =
+    snapshot.possession;
+
+  pendingDefense =
+    snapshot.pendingDefense;
+
+  injuryMode =
+    snapshot.injuryMode;
+
+  injuredPlayer =
+    snapshot.injuredPlayer;
+  
+  statusMessage = 
+    snapshot.statusMessage;
+  
+    saveSession();
+    updateUndoButton();
+  render();
+}
+
+function updateUndoButton() {
+
+  const btn =
+    document.getElementById('btnUndo');
+
+  if (!btn) return;
+
+  btn.disabled =
+    undoStack.length === 0;
 }
 
 function forceLine(g) {
@@ -1273,7 +1449,7 @@ function renderPie(p, total) {
 function renderLog() {
   const list = document.getElementById('logList');
   if (state.pointLog.length === 0) {
-    list.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:8px 0">Aucun point encore marqué</div>';
+    list.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:8px 0">No points scored yet</div>';
     return;
   }
   list.innerHTML = [...state.pointLog].reverse().map(pt => {
@@ -1302,7 +1478,43 @@ function resetAll() {
   localStorage.removeItem('ult_mix_score');
   document.getElementById('saveDot').className = 'save-dot ok';
   document.getElementById('saveLabel').textContent = 'Sauvegardé';
-  render();
+  // ============================================
+  // RESET PLAYER STATS
+  // ============================================
+
+  Object.keys(playerStats).forEach(name => {
+
+    playerStats[name] = {
+      touches: 0,
+      completions: 0,
+      assists: 0,
+      goals: 0,
+      drops: 0,
+      throwaways: 0,
+      defenses: 0
+    };
+  });
+
+  // ============================================
+  // RESET THROW CONNECTIONS
+  // ============================================
+
+  state.throwConnections = {};
+  players.forEach(player => {
+    state.throwConnections[player.name] = {};
+  });
+
+  // ============================================
+  // RESET GAMEPLAY STATE
+  // ============================================
+
+  currentThrower = null;
+  activePlayers = [];
+  possession = "offense";
+  pendingDefense = false;
+  injuryMode = false;
+  injuredPlayer = null;
+    render();
 }
 
 function updateNames() {
@@ -1323,11 +1535,15 @@ function flashScore(id) {
 
 function showTab(name) {
   document.querySelectorAll('.tab').forEach((t, i) => {
-    t.className = 'tab' + (['offense','defense','players'][i] === name ? ' active' : '');
+    t.className = 'tab' + (['offense','defense','players','stats'][i] === name ? ' active' : '');
   });
   document.querySelectorAll('.pane').forEach(p => {
     p.className = 'pane' + (p.id === 'pane-' + name ? ' active' : '');
   });
+    // lazy rendering
+  if (name === 'stats') {
+    renderStatsTab();
+  }
 }
 
 
@@ -1363,13 +1579,12 @@ function renderPlayerButtons() {
       if (pendingDefense === "interception") {
 
         btn.onclick = () => {
-
+          pushUndo();
           playerStats[player.name].defenses++;
-          playerStats[player.name].interceptions++;
           playerStats[player.name].touches++;
 
           currentThrower = player.name;
-
+          statusMessage = `${currentThrower} intercepted the disc`;
           pendingDefense = false;
 
           render();
@@ -1383,9 +1598,9 @@ function renderPlayerButtons() {
       else if (pendingDefense === true) {
 
         btn.onclick = () => {
-
+          pushUndo();
           playerStats[player.name].defenses++;
-
+          statusMessage = `${player.name} made the defense. Select who picks up the disc`
           pendingDefense = "pickup";
 
           render();
@@ -1448,32 +1663,7 @@ function renderPlayerButtons() {
 
   if (!display) return;
 
-  if (pendingDefense === true) {
-
-    display.textContent =
-      "Select defender";
-
-  }
-
-  else if (pendingDefense === "pickup") {
-
-    display.textContent =
-      "Select pickup player";
-
-  }
-
-  else if (pendingDefense === "interception") {
-
-    display.textContent =
-      "Select interceptor";
-
-  }
-
-  else {
-
-    display.textContent =
-      currentThrower || "Select thrower";
-  }
+  display.textContent = statusMessage;
 }
 
 function renderRosterButtons() {
@@ -1552,6 +1742,9 @@ function renderRosterButtons() {
         currentThrower = player.name;
         }
 
+        //Status Message
+        statusMessage = `${player.name} replaced ${injuredPlayer}`;
+
         // reset injury mode
         injuredPlayer = null;
         injuryMode = false;
@@ -1594,48 +1787,211 @@ function renderRosterButtons() {
   }
 }
 
-function recordThrowaway() {
+function renderStatsTab() {
+    const container =
+    document.getElementById('statsContainer');
 
-  possession = "defense";
+  container.innerHTML = '';
 
-  currentThrower = null;
+  players.forEach(player => {
 
-  showTab("defense");
+    const s = playerStats[player.name];
 
-  render();
+    // skip players with no stats
+    const totalStats =
+      s.touches +
+      s.completions +
+      s.throwaways +
+      s.drops +
+      s.goals +
+      s.assists +
+      s.defenses;
+
+    if (totalStats === 0) return;
+
+    const card = document.createElement('div');
+    card.className = 'player-card';
+
+    // unique canvas id
+    const canvasId =
+      'chart-' + player.name.replace(/\s+/g, '-');  
+  card.innerHTML = `
+
+      <div class="player-card-header">
+        <div class="player-card-name">
+          ${player.name}
+        </div>
+
+        <div class="player-card-gender ${player.gender.toLowerCase()}">
+          ${player.gender}
+        </div>
+      </div>
+
+      <div class="player-stat-grid">
+
+        <div class="player-stat">
+          <div class="player-stat-label">Touches</div>
+          <div class="player-stat-value">${s.touches}</div>
+        </div>
+
+        <div class="player-stat">
+          <div class="player-stat-label">Completions</div>
+          <div class="player-stat-value">${s.completions}</div>
+        </div>
+
+        <div class="player-stat">
+          <div class="player-stat-label">Throwaways</div>
+          <div class="player-stat-value">${s.throwaways}</div>
+        </div>
+
+        <div class="player-stat">
+          <div class="player-stat-label">Drops</div>
+          <div class="player-stat-value">${s.drops}</div>
+        </div>
+
+        <div class="player-stat">
+          <div class="player-stat-label">Goals</div>
+          <div class="player-stat-value">${s.goals}</div>
+        </div>
+
+        <div class="player-stat">
+          <div class="player-stat-label">Assists</div>
+          <div class="player-stat-value">${s.assists}</div>
+        </div>
+
+        <div class="player-stat">
+          <div class="player-stat-label">Defenses</div>
+          <div class="player-stat-value">${s.defenses}</div>
+        </div>
+
+      </div>
+
+      <div class="player-chart-wrap">
+        <canvas
+          id="${canvasId}"
+          width="120"
+          height="120">
+        </canvas>
+
+        <div
+          class="player-chart-legend"
+          id="legend-${canvasId}">
+        </div>
+      </div>
+    `;
+
+    container.appendChild(card);
+
+    renderPlayerConnectionChart(
+      player.name,
+      canvasId
+    );
+  });
 }
 
-function recordOpponentThrowaway() {
-  possession = "offense";
-  currentThrower = null;
-  pendingDefense = false;
-  showTab("offense");
-  render();
-}
+function renderPlayerConnectionChart(playerName, canvasId) {
+    const canvas =
+    document.getElementById(canvasId);
 
-function recordDefense() {
-  possession = "offense";
-  currentThrower = null;
-  pendingDefense = true;
-  showTab("offense");
-  render();
-}
+  if (!canvas) return;
 
-function recordInterception() {
-  possession = "offense";
-  pendingDefense = "interception";
-  currentThrower = null;
-  showTab("offense");
-  render();
-}
+  const ctx =
+    canvas.getContext('2d');
 
-function recordOpponentGoal() {
-  addPoint("B");
-  currentThrower = null;
-  possession = "offense";
-  activePlayers = [];
-  showTab("players");
-  render();
+  ctx.clearRect(0, 0, 120, 120);
+
+  const connections =
+    state.throwConnections[playerName];
+
+  if (!connections) return;
+
+  const receivers =
+  Object.keys(connections)
+    .sort((a, b) =>
+      connections[b] - connections[a]
+    );
+    
+  if (receivers.length === 0) {
+
+    ctx.fillStyle = '#333';
+
+    ctx.beginPath();
+    ctx.arc(60, 60, 45, 0, Math.PI * 2);
+    ctx.fill();
+
+    return;
+  }
+
+  const values =
+    receivers.map(r => Number(connections[r]) || 0);
+
+  const total =
+    values.reduce((a, b) => a + b, 0);
+
+  const colors = [
+    '#e8547a',
+    '#4a9eff',
+    '#3ecf7c',
+    '#f5a623',
+    '#9b59b6',
+    '#e67e22',
+    '#1abc9c',
+    '#c0392b'
+  ];
+
+  let start = -Math.PI / 2;
+
+  receivers.forEach((receiver, i) => {
+
+    const value = connections[receiver];
+
+    const slice =
+      value / total * Math.PI * 2;
+
+    ctx.beginPath();
+    ctx.moveTo(60, 60);
+    ctx.arc(60, 60, 45, start, start + slice);
+    ctx.closePath();
+
+    ctx.fillStyle =
+      colors[i % colors.length];
+
+    ctx.fill();
+
+    start += slice;
+  });
+
+  // legend
+  const legend =
+    document.getElementById('legend-' + canvasId);
+
+  legend.innerHTML = receivers.map((receiver, i) => {
+
+  const color =
+    colors[i % colors.length];
+
+  return `
+
+    <div class="player-chart-item">
+
+      <div
+        class="player-chart-dot"
+        style="background:${color}">
+      </div>
+
+      <div style="color:${color}; font-weight:600;">
+
+        ${receiver}:
+
+        <span style="opacity:0.85;">
+          ${connections[receiver]}
+        </span>
+
+      </div>
+
+    </div>
+  `;
+  }).join('');
 }
 
 // =====================================================
@@ -1657,7 +2013,7 @@ function loadSession() {
 
 function saveSession() {
   const snap = {
-    state: JSON.parse(JSON.stringify(state)),
+    state: structuredClone(state),
     nameA: document.getElementById('nameA').value,
     nameB: document.getElementById('nameB').value,
     matchDate: document.getElementById('matchDate').value,
@@ -1671,18 +2027,38 @@ function saveSession() {
 }
 
 function exportXLSX() {
-  const teamA = document.getElementById('nameA').value || 'Équipe A';
-  const teamB = document.getElementById('nameB').value || 'Équipe B';
-  const date = document.getElementById('matchDate').value || new Date().toISOString().slice(0,10);
-  const p = state.tot, e = state.tot;
-  const total = p.FF + p.MM + p.FM + p.MF;
-  const mixed = p.FM + p.MF;
-  const errF = e.dropF + e.incF + e.stallF;
-  const errM = e.dropM + e.incM + e.stallM;
+
+  const teamA =
+    document.getElementById('nameA').value || 'Équipe A';
+
+  const teamB =
+    document.getElementById('nameB').value || 'Équipe B';
+
+  const date =
+    document.getElementById('matchDate').value ||
+    new Date().toISOString().slice(0,10);
+
+  const p = state.tot;
+  const e = state.tot;
+
+  const total =
+    p.FF + p.MM + p.FM + p.MF;
+
+  const mixed =
+    p.FM + p.MF;
+
+  const errF =
+    e.dropF + e.incF + e.stallF;
+
+  const errM =
+    e.dropM + e.incM + e.stallM;
 
   const wb = XLSX.utils.book_new();
 
-  // Feuille 1 — Résumé
+  // =================================================
+  // SUMMARY SHEET
+  // =================================================
+
   const ws1 = XLSX.utils.aoa_to_sheet([
     ['Match', `${teamA} vs ${teamB}`],
     ['Date', date],
@@ -1709,41 +2085,178 @@ function exportXLSX() {
     ['Total erreurs filles', errF],
     ['Total erreurs garçons', errM],
   ]);
-  XLSX.utils.book_append_sheet(wb, ws1, 'Résumé');
 
-  // Feuille 2 — Points
-  const ptRows = [['#', 'Équipe', 'Score A', 'Score B', 'Dernière passe', 'Ligne',
-    'FF pt', 'GG pt', 'FG pt', 'GF pt',
-    'Drop F pt', 'Drop G pt', 'Inc F pt', 'Inc G pt', 'Stall F pt', 'Stall G pt']];
+  XLSX.utils.book_append_sheet(
+    wb,
+    ws1,
+    'Résumé'
+  );
+
+  // =================================================
+  // POINTS SHEET
+  // =================================================
+
+  const ptRows = [[
+    '#',
+    'Équipe',
+    'Score A',
+    'Score B',
+    'Dernière passe',
+    'Ligne',
+    'FF pt',
+    'GG pt',
+    'FG pt',
+    'GF pt',
+    'Drop F pt',
+    'Drop G pt',
+    'Inc F pt',
+    'Inc G pt',
+    'Stall F pt',
+    'Stall G pt'
+  ]];
+
   state.pointLog.forEach((pt, i) => {
+
     ptRows.push([
-      i+1, pt.teamName, pt.scoreA, pt.scoreB,
+      i + 1,
+      pt.teamName,
+      pt.scoreA,
+      pt.scoreB,
       pt.lastPass ? passLabel(pt.lastPass) : '—',
       lineName(pt.line),
-      pt.passes.FF, pt.passes.MM, pt.passes.FM, pt.passes.MF,
-      pt.passes.dropF, pt.passes.dropM, pt.passes.incF, pt.passes.incM, pt.passes.stallF, pt.passes.stallM
+      pt.passes.FF,
+      pt.passes.MM,
+      pt.passes.FM,
+      pt.passes.MF,
+      pt.passes.dropF,
+      pt.passes.dropM,
+      pt.passes.incF,
+      pt.passes.incM,
+      pt.passes.stallF,
+      pt.passes.stallM
     ]);
   });
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ptRows), 'Points');
 
-  // Feuille 3 — Journal actions
-  const logRows = [['#', 'Horodatage', 'Type', 'Détail', 'Ligne']];
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.aoa_to_sheet(ptRows),
+    'Points'
+  );
+
+  // =================================================
+  // ACTION LOG SHEET
+  // =================================================
+
+  const logRows = [[
+    '#',
+    'Horodatage',
+    'Type',
+    'Détail',
+    'Ligne'
+  ]];
+
   state.actionLog.forEach((a, i) => {
+
     logRows.push([
-      i+1, a.time,
+      i + 1,
+      a.time,
       a.type === 'pass' ? 'Passe' : 'Erreur',
-      a.type === 'pass' ? passLabel(a.detail) : a.detail,
+      a.type === 'pass'
+        ? passLabel(a.detail)
+        : a.detail,
       lineName(a.line)
     ]);
   });
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(logRows), 'Journal');
 
-  XLSX.writeFile(wb, `ultimate_${teamA.replace(/\s+/g,'_')}_vs_${teamB.replace(/\s+/g,'_')}_${date}.xlsx`);
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.aoa_to_sheet(logRows),
+    'Journal'
+  );
+
+  // =================================================
+  // PLAYER STATS SHEET
+  // =================================================
+
+  const playerRows = [[
+    'Player',
+    'Gender',
+    'Touches',
+    'Completions',
+    'Assists',
+    'Goals',
+    'Drops',
+    'Throwaways',
+    'Defenses',
+  ]];
+
+  players.forEach(player => {
+
+    const s = playerStats[player.name];
+
+    playerRows.push([
+      player.name,
+      player.gender,
+      s.touches || 0,
+      s.completions || 0,
+      s.assists || 0,
+      s.goals || 0,
+      s.drops || 0,
+      s.throwaways || 0,
+      s.defenses || 0
+    ]);
+  });
+
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.aoa_to_sheet(playerRows),
+    'Player Stats'
+  );
+
+  // =================================================
+  // THROW CONNECTIONS SHEET
+  // =================================================
+
+  const connectionRows = [[
+    'Thrower',
+    'Receiver',
+    'Completions'
+  ]];
+
+  Object.keys(state.throwConnections).forEach(thrower => {
+
+    const targets =
+      state.throwConnections[thrower];
+
+    Object.keys(targets).forEach(receiver => {
+
+      connectionRows.push([
+        thrower,
+        receiver,
+        targets[receiver]
+      ]);
+    });
+  });
+
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.aoa_to_sheet(connectionRows),
+    'Throw Connections'
+  );
+
+  // =================================================
+  // EXPORT FILE
+  // =================================================
+
+  XLSX.writeFile(
+    wb,
+    `ultimate_${teamA.replace(/\s+/g,'_')}_vs_${teamB.replace(/\s+/g,'_')}_${date}.xlsx`
+  );
 }
 
 function copySessionLink() {
   const snap = {
-    state: JSON.parse(JSON.stringify(state)),
+    state: structuredClone(state),
     nameA: document.getElementById('nameA').value,
     nameB: document.getElementById('nameB').value,
     matchDate: document.getElementById('matchDate').value,
@@ -1806,6 +2319,7 @@ if (localStorage.getItem('ult_theme') === 'light') {
 }
 loadSession();
 render();
+updateUndoButton();
 </script>
 </body>
 </html>
