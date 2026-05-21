@@ -700,7 +700,7 @@ body.light .setup-fields input { color-scheme: light; }
 <div class="header">
   <div class="header-top">
     <div class="logo">TRACKER</div>
-    <div class="version">v1.1</div>
+    <div class="version">v1.1.1</div>
     <button class="btn-save" onclick="saveSession()" title="Save">
       <span class="save-dot ok" id="saveDot"></span>
       <span id="saveLabel">Saved</span>
@@ -958,14 +958,12 @@ players.forEach(player => {
 
     touches: 0,
     completions: 0,
-
     assists: 0,
     goals: 0,
-
     drops: 0,
     throwaways: 0,
-
     defenses: 0,
+    pointsPlayed: 0
   };
 });
 
@@ -1251,7 +1249,9 @@ function startPoint() {
     statusMessage = "Point started. Select who picks up the disc or go to the defense tab";
   else
     statusMessage = "Point started";
-    
+  activePlayers.forEach(name => {
+    playerStats[name].pointsPlayed++;
+  });  
   logEvent(`Point started. ${activePlayers.join(", ")}`);
   showTab(possession);
   render();
@@ -1815,6 +1815,9 @@ function renderRosterButtons() {
         currentThrower = player.name;
         }
 
+        //add a point played for the replacement player
+        playerStats[player.name].pointsPlayed++;
+
         //Status Message
         statusMessage = `${player.name} replaced ${injuredPlayer}`;
         logEvent(`Injury. ${player.name} replaced ${injuredPlayer}`);
@@ -2269,6 +2272,7 @@ function exportXLSX() {
   const playerRows = [[
     'Player',
     'Gender',
+    'Points played',
     'Touches',
     'Completions',
     'Completion %',
@@ -2286,6 +2290,7 @@ function exportXLSX() {
     playerRows.push([
       player.name,
       player.gender,
+      s.pointsPlayed || 0,
       s.touches || 0,
       s.completions || 0,
       (s.completions + s.throwaways) > 0
