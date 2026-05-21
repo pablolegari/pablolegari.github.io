@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <meta name="author" content="Pablo Legari">
 <meta name="copyright" content="© 2026 Pablo Legari">
-<meta name="date" content="2026-05-20">
+<meta name="date" content="2026-05-21">
 <meta name="licence" content="GPL">
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ultimate Frisbee — Score & Mixity</title>
+<title>Mixl1 Tracker</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -304,24 +304,6 @@ canvas { flex-shrink: 0; }
 .pie-item { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--text2); }
 .pie-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
-/* ── POINT LOG ── */
-.point-log { margin-top: 18px; }
-.log-entry {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--border);
-  font-size: 12px;
-}
-.log-entry:last-child { border-bottom: none; }
-.log-pt { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text3); width: 44px; flex-shrink: 0; }
-.log-team { font-weight: 600; font-size: 11px; flex-shrink: 0; }
-.log-last { font-size: 11px; color: var(--text2); }
-.log-line { margin-left: auto; font-size: 10px; padding: 2px 7px; border-radius: 8px; }
-.log-line.f { background: var(--pink-dim); color: var(--pink); }
-.log-line.m { background: var(--blue-dim); color: var(--blue); }
-
 /* ── ACTIONS ── */
 .actions-bar {
   display: flex;
@@ -438,6 +420,18 @@ canvas { flex-shrink: 0; }
   font-family: 'DM Sans', sans-serif;
   font-size: 14px;
   font-weight: 600;
+}
+
+.roster-btn.female {
+  background: var(--pink-dim);
+  border-color: var(--pink);
+  color: var(--pink);
+}
+
+.roster-btn.male {
+  background: var(--blue-dim);
+  border-color: var(--blue);
+  color: var(--blue);
 }
 
 .roster-btn:hover {
@@ -706,7 +700,7 @@ body.light .setup-fields input { color-scheme: light; }
 <div class="header">
   <div class="header-top">
     <div class="logo">TRACKER</div>
-    <div class="version">v1.0</div>
+    <div class="version">v1.1</div>
     <button class="btn-save" onclick="saveSession()" title="Save">
       <span class="save-dot ok" id="saveDot"></span>
       <span id="saveLabel">Saved</span>
@@ -743,10 +737,10 @@ body.light .setup-fields input { color-scheme: light; }
 </div>
 
 <div class="line-bar">
-  <span class="line-label">GENDER :</span>
+  <span class="line-label">GENDER RATIO:</span>
   <div class="line-badge none" id="lineBadge">Not defined</div>
   <div class="line-override">
-    <span>First point :</span>
+    <span>Initial ratio:</span>
     <button class="btn-line" id="btnF" onclick="forceLine('F')">W</button>
     <button class="btn-line" id="btnM" onclick="forceLine('M')">M</button>
   </div>
@@ -868,6 +862,7 @@ body.light .setup-fields input { color-scheme: light; }
       <div class="stat-row"><span class="stat-lbl">Mixed passes (F↔M)</span><span class="stat-val green" id="st-mixed">0</span></div>
       <div class="stat-row"><span class="stat-lbl">% Mixity</span><span class="stat-val green" id="st-pct">—</span></div>
       <div class="stat-row"><span class="stat-lbl">Completion %</span><span class="stat-val green" id="st-completion">—</span></div>
+      <div class="stat-row"><span class="stat-lbl">Longest Possession</span><span class="stat-val green" id="st-possession">0</span></div>
 
       <div class="bar-section">
         <div class="bar-item">
@@ -893,10 +888,7 @@ body.light .setup-fields input { color-scheme: light; }
         <div class="pie-legend" id="pieLegend"></div>
       </div>
 
-      <div class="point-log">
-        <div class="stats-title" style="margin-top:18px">Points scored</div>
-        <div id="logList"><div style="font-size:12px;color:var(--text3);padding:8px 0">No point scored yet</div></div>
-      </div>
+      
     </div>
   </div>
 </div>
@@ -925,29 +917,37 @@ let injuredPlayer = null;
 
 let injuryMode = false;
 
+let eventTextLog = [];
+
+let currentPossessionPasses = 0;
+
+let longestPossession = 0;
+
+let activeTab = "players";
+
 const undoStack = []; // stack of {state snapshot, receiver}
-const UNDO_MAX = 50;  // max undo depth
+const UNDO_MAX = 30;  // max undo depth
 
 const players = [
   { name: 'Barbara', gender: 'F' },
-  { name: 'Ben', gender: 'M' },
   { name: 'Camille', gender: 'F' },
   { name: 'Dirkje', gender: 'F' },
-  { name: 'Greg', gender: 'M' },
-  { name: 'Jeroen', gender: 'M' },
-  { name: 'Kat', gender: 'F' },
-  { name: 'Lio', gender: 'M' },
-  { name: 'Louis', gender: 'M' },
   { name: 'Mathilde', gender: 'F' },
+  { name: 'Sarah', gender: 'F' },
+  { name: 'Ben', gender: 'M' },
+  { name: 'Lio', gender: 'M' },
   { name: 'Maxime', gender: 'M' },
-  { name: 'Mitja', gender: 'M' },
-  { name: 'Ophélie', gender: 'F' },
   { name: 'Pablo', gender: 'M' },
   { name: 'Quentin', gender: 'M' },
-  { name: 'Sarah', gender: 'F' },
+  { name: 'Kat', gender: 'F' },
+  { name: 'Ophélie', gender: 'F' },
   { name: 'Thémis', gender: 'F' },
   { name: 'Thérèse', gender: 'F' },
-  { name: 'Zoé', gender: 'F' }
+  { name: 'Zoé', gender: 'F' },
+  { name: 'Greg', gender: 'M' },
+  { name: 'Jeroen', gender: 'M' },
+  { name: 'Louis', gender: 'M' },
+  { name: 'Mitja', gender: 'M' }
 ];
 
 let playerStats = {};
@@ -1008,11 +1008,15 @@ function pushUndo() {
     pendingDefense,
     injuryMode,
     injuredPlayer,
-    statusMessage
+    statusMessage,
+    activeTab:
+      document.querySelector('.pane.active')
+        ?.id
+        ?.replace('pane-', '')
   });
 
   // optional max history
-  if (undoStack.length > 100) {
+  if (undoStack.length > UNDO_MAX) {
     undoStack.shift();
   }
   
@@ -1024,6 +1028,7 @@ function recordPass(receiverName) {
     alert("Select initial thrower");
     return;
   }
+  
   // Prevent self-pass
   if (receiverName === currentThrower) return;
   pushUndo();
@@ -1058,7 +1063,11 @@ function recordPass(receiverName) {
 
   // Status message
   statusMessage = `${currentThrower} -> ${receiverName}`;
+  logEvent(`${currentThrower} -> ${receiverName}`);
 
+  //Longest possession tracker
+  currentPossessionPasses++;
+  
   // Receiver becomes next thrower
   previousThrower = currentThrower;
   currentThrower = receiverName;
@@ -1097,22 +1106,6 @@ function recordGoal(scorerName) {
   pushUndo();
 
   // ============================================
-  // PLAYER STATS
-  // ============================================
-
-  // scorer gets goal
-  playerStats[scorerName].goals++;
-
-  // Status Message
-  statusMessage =  `${scorerName} scored!`;
-
-  // thrower gets assist
-  if (previousThrower) {
-
-    playerStats[previousThrower].assists++;
-  }
-
-  // ============================================
   // TEAM SCORE
   // ============================================
 
@@ -1129,6 +1122,27 @@ function recordGoal(scorerName) {
 
   state.lastPass = null;
 
+  // ============================================
+  // PLAYER STATS
+  // ============================================
+
+  // scorer gets goal
+  playerStats[scorerName].goals++;
+
+  // Status Message
+  statusMessage =  `${scorerName} scored!`;
+  logEvent(`${scorerName} scored! ${state.scoreA} - ${state.scoreB}`);
+
+  // thrower gets assist
+  if (previousThrower) {
+
+    playerStats[previousThrower].assists++;
+  }
+  // Longest possession tracker
+  if (currentPossessionPasses > longestPossession) {
+    longestPossession = currentPossessionPasses;
+  }
+  currentPossessionPasses = 0;
   // ============================================
   // NEXT POINT
   // ============================================
@@ -1153,9 +1167,19 @@ function recordDrop() {
   pushUndo();
   playerStats[currentThrower].drops++;
   statusMessage = `${currentThrower} dropped the disc`;
+  logEvent(`${currentThrower} dropped the disc`);
   possession = "defense";
   currentThrower = null;
   previousThrower = null;
+  //Longest possession tracker
+  const finalPossession =
+    Math.max(0, currentPossessionPasses - 1);
+
+  if (finalPossession > longestPossession) {
+    longestPossession = finalPossession;
+  }
+  currentPossessionPasses = 0;
+  
   showTab("defense");
   render();
 }
@@ -1165,9 +1189,16 @@ function recordThrowaway() {
   pushUndo();
   playerStats[currentThrower].throwaways++;
   statusMessage = `${currentThrower} threw it away`;
+  logEvent(`${currentThrower} threw it away`);
   possession = "defense";
   currentThrower = null;
   previousThrower = null;
+  //Longest possession tracker
+  if (currentPossessionPasses > longestPossession) {
+    longestPossession = currentPossessionPasses;
+  }
+  currentPossessionPasses = 0;
+
   showTab("defense");
   render();
 }
@@ -1186,7 +1217,6 @@ function addPoint(team) {
 
 function removePoint(team) {
   if (state['score' + team] <= 0) return;
-  pushUndo();
   state['score' + team]--;
   if (state.pointLog.length > 0) state.pointLog.pop();
   render();
@@ -1197,6 +1227,7 @@ function setInitialThrower(name) {
   currentThrower = name;
   playerStats[name].touches++;
   statusMessage = `${name} picked up the disc`;
+  logEvent(`${name} picked up the disc`);
   pendingDefense = false;
   render();
 }
@@ -1217,9 +1248,11 @@ function startPoint() {
   pushUndo();
   currentThrower = null;
   if (possession === "offense")
-    statusMessage = "Point started. Select who picks up the disc";
+    statusMessage = "Point started. Select who picks up the disc or go to the defense tab";
   else
     statusMessage = "Point started";
+    
+  logEvent(`Point started. ${activePlayers.join(", ")}`);
   showTab(possession);
   render();
 }
@@ -1231,7 +1264,7 @@ function recordInjury() {
   injuredPlayer = null;
   
   showTab("players");
-
+  
   renderRosterButtons();
 }
 
@@ -1241,6 +1274,7 @@ function recordOpponentThrowaway() {
   currentThrower = null;
   pendingDefense = false;
   statusMessage = "Opponents threw the disc away. Select who picks it up";
+  logEvent("Opponent Throwaway");
   showTab("offense");
   render();
 }
@@ -1251,6 +1285,7 @@ function recordDefense() {
   currentThrower = null;
   pendingDefense = true;
   statusMessage = "Select who made the defense";
+  logEvent("Defense");
   showTab("offense");
   render();
 }
@@ -1261,6 +1296,7 @@ function recordInterception() {
   pendingDefense = "interception";
   currentThrower = null;
   statusMessage = "Select who intercepted the disc";
+  logEvent("Interception");
   showTab("offense");
   render();
 }
@@ -1272,6 +1308,7 @@ function recordOpponentGoal() {
   possession = "offense";
   activePlayers = [];
   statusMessage = "Opponents scored";
+  logEvent(`Opponent goal. ${state.scoreA} - ${state.scoreB}`);
   showTab("players");
   render();
 }
@@ -1313,8 +1350,16 @@ function undo() {
   statusMessage = 
     snapshot.statusMessage;
   
+  activeTab = 
+    snapshot.activeTab;
+  
     saveSession();
     updateUndoButton();
+    showTab(activeTab);
+    
+    if (eventTextLog.length > 0) {
+      eventTextLog.pop();
+    }
   render();
 }
 
@@ -1370,6 +1415,9 @@ document.addEventListener('keydown', e => {
   }
 });
 
+function logEvent(text) {
+  eventTextLog.push(text);
+}
 
 // =====================================================
 // RENDER
@@ -1422,6 +1470,9 @@ function render() {
 
   document.getElementById('st-completion').textContent =
     completionPct;
+  
+  document.getElementById('st-possession').textContent =
+    Math.max(longestPossession, currentPossessionPasses);
 
   // bars
   ['FF','MM','FM','MF'].forEach(k => {
@@ -1432,9 +1483,6 @@ function render() {
 
   // pie
   renderPie(p, total);
-
-  // point log
-  renderLog();
   
   // player buttons
   renderPlayerButtons();
@@ -1468,25 +1516,6 @@ function renderPie(p, total) {
   document.getElementById('pieLegend').innerHTML = leg;
 }
 
-function renderLog() {
-  const list = document.getElementById('logList');
-  if (state.pointLog.length === 0) {
-    list.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:8px 0">No points scored yet</div>';
-    return;
-  }
-  list.innerHTML = [...state.pointLog].reverse().map(pt => {
-    const lpLabel = pt.lastPass ? passLabel(pt.lastPass) : '—';
-    const lpColor = { FF:'var(--pink)', MM:'var(--blue)', FM:'var(--green)', MF:'var(--amber)' }[pt.lastPass] || 'var(--text3)';
-    const teamColor = pt.team === 'A' ? 'var(--green)' : 'var(--amber)';
-    return `<div class="log-entry">
-      <span class="log-pt">#${pt.num + 1}</span>
-      <span class="log-team" style="color:${teamColor}">${pt.teamName}</span>
-      <span class="log-last" style="color:${lpColor}">${lpLabel}</span>
-      <span class="log-line ${pt.line.toLowerCase()}">${pt.line}</span>
-    </div>`;
-  }).join('');
-}
-
 function resetAll() {
   if (!confirm('Réinitialiser toutes les données ?')) return;
   state.scoreA = 0; state.scoreB = 0;
@@ -1500,6 +1529,7 @@ function resetAll() {
   localStorage.removeItem('ult_mix_score');
   document.getElementById('saveDot').className = 'save-dot ok';
   document.getElementById('saveLabel').textContent = 'Saved';
+  showTab('players')
   // ============================================
   // RESET PLAYER STATS
   // ============================================
@@ -1536,7 +1566,9 @@ function resetAll() {
   pendingDefense = false;
   injuryMode = false;
   injuredPlayer = null;
-  statusMessage = "Hello";
+  statusMessage = "Let's start again";
+  currentPossessionPasses = 0
+  longestPossession = 0
     render();
 }
 
@@ -1622,6 +1654,7 @@ function renderPlayerButtons() {
 
           currentThrower = player.name;
           statusMessage = `${currentThrower} intercepted the disc`;
+          logEvent(`${currentThrower} intercepted the disc`)
           pendingDefense = false;
 
           render();
@@ -1637,7 +1670,8 @@ function renderPlayerButtons() {
         btn.onclick = () => {
           pushUndo();
           playerStats[player.name].defenses++;
-          statusMessage = `${player.name} made the defense. Select who picks up the disc`
+          statusMessage = `${player.name} made the D. Select who picks up the disc`;
+          logEvent(`${player.name} made the D`);
           pendingDefense = "pickup";
 
           render();
@@ -1715,9 +1749,11 @@ function renderRosterButtons() {
       activePlayers.includes(player.name);
 
     const btn = document.createElement("button");
-
+    
     btn.className =
-      "roster-btn" + (selected ? " selected" : "");
+      "roster-btn " +
+      (player.gender === "F" ? "female " : "male ") +
+      (selected ? "selected" : "");
 
     btn.textContent = player.name;
 
@@ -1781,6 +1817,7 @@ function renderRosterButtons() {
 
         //Status Message
         statusMessage = `${player.name} replaced ${injuredPlayer}`;
+        logEvent(`Injury. ${player.name} replaced ${injuredPlayer}`);
 
         // reset injury mode
         injuredPlayer = null;
@@ -1938,7 +1975,7 @@ function renderStatsTab() {
 }
 
 function renderPlayerConnectionChart(playerName, canvasId) {
-    const canvas =
+  const canvas =
     document.getElementById(canvasId);
 
   if (!canvas) return;
@@ -1954,11 +1991,11 @@ function renderPlayerConnectionChart(playerName, canvasId) {
   if (!connections) return;
 
   const receivers =
-  Object.keys(connections)
-    .sort((a, b) =>
-      connections[b] - connections[a]
-    );
-    
+    Object.keys(connections)
+      .sort((a, b) =>
+        connections[b] - connections[a]
+      );
+
   if (receivers.length === 0) {
 
     ctx.fillStyle = '#333';
@@ -1976,34 +2013,73 @@ function renderPlayerConnectionChart(playerName, canvasId) {
   const total =
     values.reduce((a, b) => a + b, 0);
 
-  const colors = [
-    '#e8547a',
-    '#4a9eff',
-    '#3ecf7c',
-    '#f5a623',
-    '#9b59b6',
-    '#e67e22',
-    '#1abc9c',
-    '#c0392b'
+  // persistent player -> color mapping
+  if (!window.playerConnectionColors) {
+    window.playerConnectionColors = {};
+  }
+
+  const colorMap = window.playerConnectionColors;
+
+  const connectionColors = [
+    '#e8547a', // pink
+    '#1abc9c', // teal
+    '#f5a623', // amber
+    '#4a9eff', // blue
+    '#9b59b6', // purple
+    '#3ecf7c', // green
+    '#e67e22', // orange
+    '#00bcd4', // cyan
+    '#c0392b', // dark red
+    '#8bc34a', // lime
+    '#ff6b81', // rose
+    '#34495e', // slate
+    '#ffcc00', // yellow
+    '#6c5ce7', // indigo
+    '#fd79a8', // light pink
+    '#00cec9', // aqua
+    '#d63031', // red
+    '#0984e3', // bright blue
+    '#e17055', // coral
+    '#2ecc71', // emerald
+    '#f39c12', // gold
+    '#7f8c8d', // gray
+    '#27ae60', // dark green
+    '#8e44ad'  // deep purple
   ];
+
+  // assign colors permanently
+  receivers.forEach(receiver => {
+
+    if (!colorMap[receiver]) {
+
+      const usedColors =
+        Object.keys(colorMap).length;
+
+      colorMap[receiver] =
+        connectionColors[
+          usedColors % connectionColors.length
+        ];
+    }
+  });
 
   let start = -Math.PI / 2;
 
-  receivers.forEach((receiver, i) => {
+  receivers.forEach((receiver) => {
 
     const value = connections[receiver];
 
     const slice =
       value / total * Math.PI * 2;
 
+    const color =
+      colorMap[receiver];
+
     ctx.beginPath();
     ctx.moveTo(60, 60);
     ctx.arc(60, 60, 45, start, start + slice);
     ctx.closePath();
 
-    ctx.fillStyle =
-      colors[i % colors.length];
-
+    ctx.fillStyle = color;
     ctx.fill();
 
     start += slice;
@@ -2013,32 +2089,32 @@ function renderPlayerConnectionChart(playerName, canvasId) {
   const legend =
     document.getElementById('legend-' + canvasId);
 
-  legend.innerHTML = receivers.map((receiver, i) => {
+  legend.innerHTML = receivers.map((receiver) => {
 
-  const color =
-    colors[i % colors.length];
+    const color =
+      colorMap[receiver];
 
-  return `
+    return `
 
-    <div class="player-chart-item">
+      <div class="player-chart-item">
 
-      <div
-        class="player-chart-dot"
-        style="background:${color}">
+        <div
+          class="player-chart-dot"
+          style="background:${color}">
+        </div>
+
+        <div style="color:${color}; font-weight:600;">
+
+          ${receiver}:
+
+          <span style="opacity:0.85;">
+            ${connections[receiver]}
+          </span>
+
+        </div>
+
       </div>
-
-      <div style="color:${color}; font-weight:600;">
-
-        ${receiver}:
-
-        <span style="opacity:0.85;">
-          ${connections[receiver]}
-        </span>
-
-      </div>
-
-    </div>
-  `;
+    `;
   }).join('');
 }
 
@@ -2087,19 +2163,47 @@ function exportXLSX() {
     new Date().toISOString().slice(0,10);
 
   const p = state.tot;
-  const e = state.tot;
-
-  const total =
+  
+  const totalCompletions =
     p.FF + p.MM + p.FM + p.MF;
 
   const mixed =
     p.FM + p.MF;
 
-  const errF =
-    e.dropF + e.incF + e.stallF;
+  const totalThrowaways =
+    Object.values(playerStats)
+      .reduce((sum, s) => sum + s.throwaways, 0);
 
-  const errM =
-    e.dropM + e.incM + e.stallM;
+  const totalDrops =
+    Object.values(playerStats)
+      .reduce((sum, s) => sum + s.drops, 0);
+
+  const totalTurnovers =
+    totalThrowaways + totalDrops;
+
+  const totalDefenses =
+    Object.values(playerStats)
+      .reduce((sum, s) => sum + s.defenses, 0);
+
+  const totalAttempts =
+    totalThrowaways + totalCompletions;
+
+  const partialCompletionPct =
+    (totalCompletions + totalThrowaways) > 0
+      ? +(
+          totalCompletions /
+          (totalCompletions + totalThrowaways) *
+          100
+        ).toFixed(1)
+      : 0;
+  const totalCompletionPct =
+  (totalCompletions + totalTurnovers) > 0
+    ? +(
+        totalCompletions /
+        (totalCompletions + totalTurnovers) *
+        100
+      ).toFixed(1)
+    : 0;
 
   const wb = XLSX.utils.book_new();
 
@@ -2113,99 +2217,50 @@ function exportXLSX() {
     ['Score ' + teamA, state.scoreA],
     ['Score ' + teamB, state.scoreB],
     [],
-    ['— PASSES TOTALES —'],
-    ['Type', 'Nombre', '% du total'],
-    ['Fille → Fille', p.FF, total > 0 ? +(p.FF/total*100).toFixed(1) : 0],
-    ['Garçon → Garçon', p.MM, total > 0 ? +(p.MM/total*100).toFixed(1) : 0],
-    ['Fille → Garçon', p.FM, total > 0 ? +(p.FM/total*100).toFixed(1) : 0],
-    ['Garçon → Fille', p.MF, total > 0 ? +(p.MF/total*100).toFixed(1) : 0],
-    ['TOTAL', total, 100],
-    ['Passes mixtes', mixed, total > 0 ? +(mixed/total*100).toFixed(1) : 0],
+    ['— TOTALS —'],
+    ['Type', 'Total'],
+    ['Attempted passes', totalAttempts],
+    ['Completions', totalCompletions],
+    ['Total Turnovers', totalTurnovers],
+    ['Throwaways', totalThrowaways],
+    ['Drops', totalDrops],
+    ['Completion % (Excluding drops)', partialCompletionPct],
+    ['Completion % (Including drops)', totalCompletionPct],
+    ['Defenses', totalDefenses],
+    ['Longest possession', Math.max(longestPossession, currentPossessionPasses)],
     [],
+    ['— MIXITY —'],
+    ['Type', 'Amount', '% of total'],
+    ['FMP → FMP', p.FF, totalCompletions > 0 ? +(p.FF/totalCompletions*100).toFixed(1) : 0],
+    ['MMP → MMP', p.MM, totalCompletions > 0 ? +(p.MM/totalCompletions*100).toFixed(1) : 0],
+    ['FMP → MMP', p.FM, totalCompletions > 0 ? +(p.FM/totalCompletions*100).toFixed(1) : 0],
+    ['MMP → FMP', p.MF, totalCompletions > 0 ? +(p.MF/totalCompletions*100).toFixed(1) : 0],
+    ['TOTAL', totalCompletions, 100],
+    ['Mixed Passes', mixed, totalCompletions > 0 ? +(mixed/totalCompletions*100).toFixed(1) : 0],
+    [],
+    
     
   ]);
 
   XLSX.utils.book_append_sheet(
     wb,
     ws1,
-    'Résumé'
+    'Summary'
   );
 
   // =================================================
-  // POINTS SHEET
+  // LOG SHEET
   // =================================================
 
-  const ptRows = [[
-    '#',
-    'Team',
-    'Score A',
-    'Score B',
-    'Dernière passe',
-    'Ligne',
-    'FF pt',
-    'GG pt',
-    'FG pt',
-    'GF pt',
-  ]];
 
-  state.pointLog.forEach((pt, i) => {
+  const logData = [
+    ["Event Log"],
+    ...eventTextLog.map(e => [e])
+  ];
 
-    ptRows.push([
-      i + 1,
-      pt.teamName,
-      pt.scoreA,
-      pt.scoreB,
-      pt.lastPass ? passLabel(pt.lastPass) : '—',
-      lineName(pt.line),
-      pt.passes.FF,
-      pt.passes.MM,
-      pt.passes.FM,
-      pt.passes.MF,
-      pt.passes.dropF,
-      pt.passes.dropM,
-      pt.passes.incF,
-      pt.passes.incM,
-      pt.passes.stallF,
-      pt.passes.stallM
-    ]);
-  });
+  const wsLog = XLSX.utils.aoa_to_sheet(logData);
 
-  XLSX.utils.book_append_sheet(
-    wb,
-    XLSX.utils.aoa_to_sheet(ptRows),
-    'Points'
-  );
-
-  // =================================================
-  // ACTION LOG SHEET
-  // =================================================
-
-  const logRows = [[
-    '#',
-    'Horodatage',
-    'Type',
-    'Détail',
-    'Ligne'
-  ]];
-
-  state.actionLog.forEach((a, i) => {
-
-    logRows.push([
-      i + 1,
-      a.time,
-      a.type === 'pass' ? 'Passe' : 'Erreur',
-      a.type === 'pass'
-        ? passLabel(a.detail)
-        : a.detail,
-      lineName(a.line)
-    ]);
-  });
-
-  XLSX.utils.book_append_sheet(
-    wb,
-    XLSX.utils.aoa_to_sheet(logRows),
-    'Journal'
-  );
+  XLSX.utils.book_append_sheet(wb, wsLog, "Log");
 
   // =================================================
   // PLAYER STATS SHEET
@@ -2216,6 +2271,7 @@ function exportXLSX() {
     'Gender',
     'Touches',
     'Completions',
+    'Completion %',
     'Assists',
     'Goals',
     'Drops',
@@ -2232,6 +2288,13 @@ function exportXLSX() {
       player.gender,
       s.touches || 0,
       s.completions || 0,
+      (s.completions + s.throwaways) > 0
+        ? Math.round(
+            s.completions /
+            (s.completions + s.throwaways) *
+            100
+          )
+        : 0,
       s.assists || 0,
       s.goals || 0,
       s.drops || 0,
@@ -2276,6 +2339,7 @@ function exportXLSX() {
     XLSX.utils.aoa_to_sheet(connectionRows),
     'Throw Connections'
   );
+
 
   // =================================================
   // EXPORT FILE
